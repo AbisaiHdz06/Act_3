@@ -117,13 +117,14 @@ router.post('/tareas', autenticarToken, async (req, res) => {
 
 // Ruta para obtener todas las tareas
 router.get('/tareas', autenticarToken, async (req, res) => {
-    try {
-        const tareas = await obtenerTareas();
-        res.status(200).json(tareas);
-    } catch (error) {
-        console.error('Error al obtener tareas', errores.status(500).send('Error del servidor');
-      }
-  });
+  try {
+      const tareas = await obtenerTareas();
+      res.status(200).json(tareas);
+  } catch (error) {
+      console.error('Error al obtener tareas', error);
+      res.status(500).send('Error del servidor');
+  }
+});
   
   // Función para obtener tareas desde el archivo JSON
   async function obtenerTareas() {
