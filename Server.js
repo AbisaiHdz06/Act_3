@@ -1,9 +1,9 @@
-require('dotenv').config(); 
+
 const express = require('express');
 const app = express();
 const router = express.Router();
 const fs = require('fs').promises;
-const mongoose = require('mongoose');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -11,20 +11,6 @@ const PORT = process.env.PORT || 3000;
 const SECRET_KEY = process.env.JWT_SECRET || 'clave_secreta'; 
 
 app.use(express.json());
-
-// Conectar a MongoDB
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Conectado a MongoDB'))
-    .catch(err => console.error('Error al conectar a MongoDB', err));
-
-// Definir el esquema y modelo de usuario
-const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-});
-
-const User = mongoose.model('User ', userSchema);
 
 // Middleware de autenticación
 function autenticarToken(req, res, next) {
