@@ -5,7 +5,7 @@ const router = express.Router();
 const fs = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid'); // Importar uuid para generar IDs únicos
+const { v4: uuidv4 } = require('uuid'); 
 
 const SECRET_KEY = process.env.JWT_SECRET || 'contraseña'; 
 const PORT = process.env.PORT || 3000; 
@@ -24,7 +24,7 @@ function autenticarToken(req, res, next) {
         if (err) {
             return res.status(401).send({ message: 'Token inválido.' });
         }
-        req.userId = decoded.id; // Asegúrate de que 'id' esté presente en el payload del token
+        req.userId = decoded.id; 
         next();
     });
 }
@@ -99,12 +99,12 @@ router.post('/tareas', autenticarToken, async (req, res) => {
 
 try {
     const tareas = await obtenerTareas();
-    const id = uuidv4(); // Generar un ID único
-    const nuevaTarea = { id, title, description }; // Crear la nueva tarea
-    tareas.push(nuevaTarea); // Agregar la nueva tarea a la lista
+    const id = uuidv4(); 
+    const nuevaTarea = { id, title, description }; 
+    tareas.push(nuevaTarea); 
 
     await guardarTareas(tareas);
-    res.status(201).json({ message: 'Tarea creada', id }); // Devolver el ID en la respuesta
+    res.status(201).json({ message: 'Tarea creada', id }); 
 } catch (error) {
     console.error('Error al crear tarea', error);
     res.status(500).send('Error del servidor');
@@ -124,7 +124,7 @@ router.get('/tareas', autenticarToken, async (req, res) => {
 
 // Ruta para editar una tarea
 router.put('/tareas/:id', autenticarToken, async (req, res) => {
-    const { id } = req.params; // Obtener el ID de los parámetros de la solicitud
+    const { id } = req.params; 
     const { title, description } = req.body;
 
     try {
@@ -147,8 +147,7 @@ router.put('/tareas/:id', autenticarToken, async (req, res) => {
 
 // Ruta para eliminar una tarea
 router.delete('/tareas/:id', autenticarToken, async (req, res) => {
-    const { id } = req.params; // Obtener el ID de los parámetros de la solicitud
-
+    const { id } = req.params; 
     try {
         const tareas = await obtenerTareas();
         const tareaIndex = tareas.findIndex(t => t.id === id);
@@ -174,13 +173,13 @@ async function obtenerTareas() {
         return JSON.parse(data);
     } catch (error) {
         console.error('Error al leer tareas', error);
-        return []; // Retornar un arreglo vacío si hay un error
+        return []; 
     }
 }
 
 // Función para guardar tareas en el archivo JSON
 async function guardarTareas(tareas) {
-    await fs.writeFile('tareas.json', JSON.stringify(tareas, null, 2)); // Formato legible
+    await fs.writeFile('tareas.json', JSON.stringify(tareas, null, 2)); 
 }
 
 // Función para obtener usuarios desde el archivo JSON
@@ -190,13 +189,13 @@ async function obtenerUsuarios() {
         return JSON.parse(data);
     } catch (error) {
         console.error('Error al leer usuarios', error);
-        return []; // Retornar un arreglo vacío si hay un error
+        return []; 
     }
 }
 
 // Función para guardar usuarios en el archivo JSON
 async function guardarUsuarios(usuarios) {
-    await fs.writeFile('usuarios.json', JSON.stringify(usuarios, null, 2)); // Formato legible
+    await fs.writeFile('usuarios.json', JSON.stringify(usuarios, null, 2)); 
 }
 
 // Integrar las rutas al servidor
