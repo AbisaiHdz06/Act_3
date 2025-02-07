@@ -33,5 +33,10 @@
     "name": "gersda",
     "email": "gersda@example.com",
     "password": "$2a$10$oREKrnIwDllwpCxM7ZH.medRmTTEpT8QzW8J4lOmgjsidWIHycaRG"
+  },
+  {
+    "name": "Meme",
+    "email": "Meme@example.com",
+    "password": "$2a$10$MzMK9SLVpup2sNPRccH60OAUzYbN2TfeWk8GmHHMYy98wVYsTqnL6"
   }
 ]
