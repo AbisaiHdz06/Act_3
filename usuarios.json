@@ -23,5 +23,15 @@
     "name": "gera",
     "email": "gera@example.com",
     "password": "$2a$10$5mwTa4BvoXraDXO4aB01SuZlFRX1DeiuVoN3EXwMA/PuFsb354f1."
+  },
+  {
+    "name": "gersa",
+    "email": "gersa@example.com",
+    "password": "$2a$10$51z5W3yFSXSnf/a89lYACuRO23tVI3ITAtUawuUueJ2by76fsRKu6"
+  },
+  {
+    "name": "gersda",
+    "email": "gersda@example.com",
+    "password": "$2a$10$oREKrnIwDllwpCxM7ZH.medRmTTEpT8QzW8J4lOmgjsidWIHycaRG"
   }
 ]

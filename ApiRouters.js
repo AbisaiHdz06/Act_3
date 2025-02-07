@@ -5,6 +5,7 @@ const router = express.Router();
 const fs = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid'); // Importar uuid para generar IDs únicos
 
 const SECRET_KEY = process.env.JWT_SECRET || 'contraseña'; 
 const PORT = process.env.PORT || 3000; 
@@ -41,18 +42,18 @@ router.post('/register', async (req, res) => {
         // Verificar si el usuario ya existe
         const users = await obtenerUsuarios();
         const existingUser   = users.find(user => user.email === email);
-        if (existingUser ) {
+        if (existingUser  ) {
             return res.status(400).json({ message: 'El usuario ya existe' });
         }
 
         // Hash de la contraseña
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser   = { name, email, password: hashedPassword };
-        users.push(newUser );
+        users.push(newUser  );
         await guardarUsuarios(users);
 
         // Generar un token de autenticación
-        const token = jwt.sign({ email: newUser .email }, SECRET_KEY, { expiresIn: '20min' });
+        const token = jwt.sign({ email: newUser  .email }, SECRET_KEY, { expiresIn: '20min' });
         res.status(201).json({ message: 'Usuario creado con éxito', token });
     } catch (error) {
         console.error('Error al registrar usuario', error);
@@ -88,22 +89,25 @@ router.post('/login', async (req, res) => {
 
 // Ruta para crear una nueva tarea
 router.post('/tareas', autenticarToken, async (req, res) => {
-    const nuevaTarea = req.body;
+    const { title, description } = req.body;
 
     // Validar que la tarea tenga un título
-    if (!nuevaTarea.title) {
-        return res.status(400).send('El título de la tarea es obligatorio');
-    }
+ if (!title) {
+    return res.status(400).send('El título de la tarea es obligatorio');
+}
 
-    try {
-        const tareas = await obtenerTareas();
-        tareas.push(nuevaTarea);
-        await guardarTareas(tareas);
-        res.status(201).send('Tarea creada');
-    } catch (error) {
-        console.error('Error al crear tarea', error);
-        res.status(500).send('Error del servidor');
-    }
+try {
+    const tareas = await obtenerTareas();
+    const id = uuidv4(); // Generar un ID único
+    const nuevaTarea = { id, title, description }; // Crear la nueva tarea
+    tareas.push(nuevaTarea); // Agregar la nueva tarea a la lista
+
+    await guardarTareas(tareas);
+    res.status(201).json({ message: 'Tarea creada', id }); // Devolver el ID en la respuesta
+} catch (error) {
+    console.error('Error al crear tarea', error);
+    res.status(500).send('Error del servidor');
+}
 });
 
 // Ruta para obtener todas las tareas
@@ -118,29 +122,31 @@ router.get('/tareas', autenticarToken, async (req, res) => {
 });
 
 // Ruta para editar una tarea
-router.put('/tareas', autenticarToken, async (req, res) => {
+router.put('/tareas/:id', autenticarToken, async (req, res) => {
+    const { id } = req.params; // Obtener el ID de los parámetros de la solicitud
     const { title, description } = req.body;
-
-    // Generar un ID aleatorio
-    const {id} = Math.random().toString(36).substr(2, 9); // Genera un ID aleatorio
 
     try {
         const tareas = await obtenerTareas();
-        
-        // Crear una nueva tarea con el ID generado
-        const nuevaTarea = { id, title, description };
-        tareas.push(nuevaTarea); // Agregar la nueva tarea a la lista
+        const tareaIndex = tareas.findIndex(t => t.id === id);
 
+        if (tareaIndex === -1) {
+            return res.status(404).send('Tarea no encontrada');
+        }
+
+        // Actualizar la tarea
+        tareas[tareaIndex] = { ...tareas[tareaIndex], title, description };
         await guardarTareas(tareas);
-        res.status(201).send('Tarea creada con ID: ' + id);
+        res.send('Tarea actualizada');
     } catch (error) {
-        console.error('Error al crear tarea', error);
+        console.error('Error al actualizar tarea', error);
         res.status(500).send('Error del servidor');
     }
 });
+
 // Ruta para eliminar una tarea
 router.delete('/tareas/:id', autenticarToken, async (req, res) => {
-    const {id} = Math.random().toString(36).substr(2, 9); // Genera un ID aleatorio
+    const { id } = req.params; // Obtener el ID de los parámetros de la solicitud
 
     try {
         const tareas = await obtenerTareas();
@@ -167,13 +173,29 @@ async function obtenerTareas() {
         return JSON.parse(data);
     } catch (error) {
         console.error('Error al leer tareas', error);
-        return [];
+        return []; // Retornar un arreglo vacío si hay un error
+    }
+}
+
+// Función para guardar tareas en el archivo JSON
+async function guardarTareas(tareas) {
+    await fs.writeFile('tareas.json', JSON.stringify(tareas, null, 2)); // Formato legible
+}
+
+// Función para obtener usuarios desde el archivo JSON
+async function obtenerUsuarios() {
+    try {
+        const data = await fs.readFile('usuarios.json', 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error al leer usuarios', error);
+        return []; // Retornar un arreglo vacío si hay un error
     }
 }
 
 // Función para guardar usuarios en el archivo JSON
 async function guardarUsuarios(usuarios) {
-    await fs.writeFile('usuarios.json', JSON.stringify(usuarios, null, 2));
+    await fs.writeFile('usuarios.json', JSON.stringify(usuarios, null, 2)); // Formato legible
 }
 
 // Integrar las rutas al servidor
