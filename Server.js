@@ -92,7 +92,6 @@ router.post('/tareas', autenticarToken, async (req, res) => {
     const { title, description } = req.body;
 
     // Validar que la tarea tenga un título
-   // Validar que la tarea tenga un título
    if (!title) {
     return res.status(400).send('El título de la tarea es obligatorio');
 }
