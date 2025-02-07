@@ -6,22 +6,24 @@ const fs = require('fs').promises;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-
-
-const SECRET_KEY = process.env.JWT_SECRET || 'clave_secreta'; 
+const SECRET_KEY = process.env.JWT_SECRET || 'contraseña'; 
+const PORT = process.env.PORT || 3000; 
 
 app.use(express.json());
 
-
-
 // Middleware de autenticación
 function autenticarToken(req, res, next) {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(401).send('Acceso denegado');
-    
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.status(403).send('Token inválido');
-        req.user = user;
+    const token = req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : null;
+
+    if (!token) {
+        return res.status(403).send({ message: 'Token no proporcionado.' });
+    }
+
+    jwt.verify(token, SECRET_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'Token inválido.' });
+        }
+        req.userId = decoded.id; // Asegúrate de que 'id' esté presente en el payload del token
         next();
     });
 }
@@ -38,19 +40,17 @@ router.post('/register', async (req, res) => {
     try {
         // Verificar si el usuario ya existe
         const users = await obtenerUsuarios();
-        const existingUser  = users.find(user => user.email === email);
+        const existingUser   = users.find(user => user.email === email);
         if (existingUser ) {
             return res.status(400).json({ message: 'El usuario ya existe' });
         }
 
         // Hash de la contraseña
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser  = { name, email, password: hashedPassword };
+        const newUser   = { name, email, password: hashedPassword };
         users.push(newUser );
         await guardarUsuarios(users);
 
-        console.log('Usuario guardado en la base de datos', newUser );
-        
         // Generar un token de autenticación
         const token = jwt.sign({ email: newUser .email }, SECRET_KEY, { expiresIn: '20min' });
         res.status(201).json({ message: 'Usuario creado con éxito', token });
@@ -118,31 +118,29 @@ router.get('/tareas', autenticarToken, async (req, res) => {
 });
 
 // Ruta para editar una tarea
-router.put('/tareas/:id', autenticarToken, async (req, res) => {
-    const { id } = req.params;
+router.put('/tareas', autenticarToken, async (req, res) => {
     const { title, description } = req.body;
+
+    // Generar un ID aleatorio
+    const {id} = Math.random().toString(36).substr(2, 9); // Genera un ID aleatorio
 
     try {
         const tareas = await obtenerTareas();
-        const tareaIndex = tareas.findIndex(t => t.id === id);
+        
+        // Crear una nueva tarea con el ID generado
+        const nuevaTarea = { id, title, description };
+        tareas.push(nuevaTarea); // Agregar la nueva tarea a la lista
 
-        if (tareaIndex === -1) {
-            return res.status(404).send('Tarea no encontrada');
-        }
-
-        // Actualizar la tarea
-        tareas[tareaIndex] = { ...tareas[tareaIndex], title, description };
         await guardarTareas(tareas);
-        res.send('Tarea actualizada');
+        res.status(201).send('Tarea creada con ID: ' + id);
     } catch (error) {
-        console.error('Error al actualizar tarea', error);
+        console.error('Error al crear tarea', error);
         res.status(500).send('Error del servidor');
     }
 });
-
 // Ruta para eliminar una tarea
 router.delete('/tareas/:id', autenticarToken, async (req, res) => {
-    const { id } = req.params;
+    const {id} = Math.random().toString(36).substr(2, 9); // Genera un ID aleatorio
 
     try {
         const tareas = await obtenerTareas();
@@ -164,24 +162,18 @@ router.delete('/tareas/:id', autenticarToken, async (req, res) => {
 
 // Función para obtener tareas desde el archivo JSON
 async function obtenerTareas() {
-    const data = await fs.readFile('tareas.json', 'utf8');
-    return JSON.parse(data);
-}
-
-// Función para guardar tareas en el archivo JSON
-async function guardarTareas(tareas) {
-    await fs.writeFile('tareas.json', JSON.stringify(tareas));
-}
-
-// Función para obtener usuarios desde el archivo JSON
-async function obtenerUsuarios() {
-    const data = await fs.readFile('usuarios.json', 'utf8');
-    return JSON.parse(data);
+    try {
+        const data = await fs.readFile('tareas.json', 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error al leer tareas', error);
+        return [];
+    }
 }
 
 // Función para guardar usuarios en el archivo JSON
 async function guardarUsuarios(usuarios) {
-    await fs.writeFile('usuarios.json', JSON.stringify(usuarios));
+    await fs.writeFile('usuarios.json', JSON.stringify(usuarios, null, 2));
 }
 
 // Integrar las rutas al servidor
